@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Periodic Table — A Visual Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --ink-bg: #122236;
+  --ink-bg-deep: #0c1a29;
+  --paper: #eef3f7;
+  --paper-dim: #b9c9d8;
+  --grid-line: rgba(180,210,235,0.12);
+  --brass: #d8a94f;
+  --brass-soft: #e6c384;
+
+  --c-alkali: #ff7a63;
+  --c-alkaline: #ffbb56;
+  --c-transition: #57a8e0;
+  --c-posttrans: #4fd2b8;
+  --c-metalloid: #b98cf0;
+  --c-nonmetal: #8ed673;
+  --c-halogen: #ef5f78;
+  --c-noble: #45d8dd;
+  --c-lanthanide: #f2a2cc;
+  --c-actinide: #8f7cf2;
+
+  --radius: 3px;
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/42px 42px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/42px 42px,
+    var(--ink-bg);
+  color: var(--paper);
+  font-family:'IBM Plex Sans', sans-serif;
+  line-height:1.6;
+}
+
+::selection{ background: var(--brass); color:#1a1206; }
+
+h1,h2,h3{ font-family:'Fraunces', serif; font-weight:600; color: var(--paper); margin:0 0 0.4em; letter-spacing:-0.01em;}
+
+.wrap{ max-width:1320px; margin:0 auto; padding: 0 28px 100px; }
+
+/* ---------- Header ---------- */
+header.hero{
+  padding: 72px 28px 40px;
+  max-width:1320px;
+  margin: 0 auto;
+  display:grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap:48px;
+  align-items:end;
+  border-bottom: 1px solid var(--grid-line);
+}
+.eyebrow-row{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+.eyebrow-row .atom-mark{ width:34px; height:34px; flex:none; }
+.eyebrow-row span{ color: var(--brass-soft); font-family:'IBM Plex Mono', monospace; font-size:13px; }
+h1.title{ font-size: clamp(38px, 5vw, 62px); line-height:1.02; max-width: 14ch; }
+h1.title em{ font-style:italic; color: var(--brass-soft); }
+.hero-sub{ color: var(--paper-dim); font-size:17px; max-width:56ch; margin-top:18px;}
+.hero-side{ font-size:15px; color:var(--paper-dim); border-left:1px solid var(--grid-line); padding-left:28px;}
+.hero-side strong{ color:var(--paper); font-weight:600;}
+.hero-side p{ margin:0 0 14px; }
+
+/* ---------- Sample cell explainer ---------- */
+.explainer{
+  display:grid;
+  grid-template-columns: 220px 1fr;
+  gap:40px;
+  align-items:center;
+  padding: 46px 0 10px;
+}
+.sample-cell{
+  width:190px; height:190px;
+  border-radius: 10px;
+  background: linear-gradient(155deg, rgba(87,168,224,0.22), rgba(87,168,224,0.06));
+  border:1px solid rgba(87,168,224,0.55);
+  padding:14px;
+  display:flex; flex-direction:column; justify-content:space-between;
+  font-family:'IBM Plex Mono', monospace;
+  position:relative;
+}
+.sample-cell .num{ font-size:16px; color:var(--brass-soft); }
+.sample-cell .sym{ font-family:'Fraunces', serif; font-size:58px; font-weight:600; text-align:center; line-height:1;}
+.sample-cell .nm{ font-size:12px; text-align:center; color:var(--paper-dim); font-family:'IBM Plex Sans',sans-serif;}
+.sample-cell .ms{ font-size:12px; text-align:center; color:var(--paper-dim);}
+.callouts{ display:grid; gap:14px; }
+.callout{ display:grid; grid-template-columns: 130px 1fr; gap:16px; font-size:14.5px; color:var(--paper-dim); padding-bottom:12px; border-bottom:1px dashed var(--grid-line);}
+.callout:last-child{ border-bottom:none; }
+.callout b{ color:var(--paper); font-weight:600; font-family:'IBM Plex Mono',monospace; font-size:13px;}
+
+/* ---------- Controls ---------- */
+.controls{
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+  padding: 36px 0 20px;
+}
+.search-box{
+  display:flex; align-items:center; gap:10px;
+  background: rgba(255,255,255,0.05);
+  border:1px solid var(--grid-line);
+  border-radius: 999px;
+  padding: 9px 18px;
+  flex: 1 1 260px;
+  max-width: 340px;
+}
+.search-box input{
+  background:none; border:none; outline:none; color:var(--paper);
+  font-family:'IBM Plex Sans',sans-serif; font-size:14px; width:100%;
+}
+.search-box svg{ flex:none; opacity:0.6;}
+.view-toggle{ display:flex; gap:8px; margin-left:auto; }
+.view-toggle button{
+  background:none; border:1px solid var(--grid-line); color:var(--paper-dim);
+  padding:8px 14px; border-radius:999px; font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+  cursor:pointer; transition: all .15s ease;
+}
+.view-toggle button.active{ background: var(--brass); border-color:var(--brass); color:#1a1206; font-weight:600;}
+
+/* ---------- Legend ---------- */
+.legend{ display:flex; flex-wrap:wrap; gap:8px 10px; padding-bottom:26px; }
+.chip{
+  display:flex; align-items:center; gap:7px;
+  font-size:12.5px; color:var(--paper-dim);
+  border:1px solid var(--grid-line);
+  padding:6px 12px 6px 8px; border-radius:999px;
+  cursor:pointer; user-select:none; transition: all .15s ease;
+  background: rgba(255,255,255,0.02);
+}
+.chip .dot{ width:10px; height:10px; border-radius:50%; flex:none; }
+.chip.dimmed{ opacity:0.28; }
+.chip:hover{ border-color: rgba(255,255,255,0.4); }
+
+/* ---------- Table grid ---------- */
+.table-scroll{ overflow-x:auto; padding-bottom:14px; margin: 0 -4px 8px; }
+.ptable{
+  display:grid;
+  grid-template-columns: repeat(18, minmax(52px,1fr));
+  grid-auto-rows: minmax(52px, auto);
+  gap:4px;
+  min-width: 1080px;
+  padding: 4px;
+}
+.gap-row{ height:14px; }
+.cell{
+  position:relative;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.04);
+  border:1px solid var(--grid-line);
+  padding:5px 6px 4px;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, opacity .15s ease;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.cell .z{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; color:rgba(238,243,247,0.55); }
+.cell .sym{ font-family:'Fraunces',serif; font-weight:600; font-size:19px; line-height:1.05; margin-top:1px;}
+.cell .nm{ font-size:8.5px; color:rgba(238,243,247,0.6); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:auto;}
+.cell:hover{ transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.35); border-color: rgba(255,255,255,0.5); z-index:2;}
+.cell.dimmed{ opacity:0.15; }
+.cell.placeholder{ display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--paper-dim); background:rgba(255,255,255,0.02); cursor:default;}
+.cell.placeholder:hover{ transform:none; box-shadow:none; }
+.cell.selected{ outline:2px solid var(--brass); outline-offset:1px; }
+
+.row-tag{
+  grid-column: 1 / -1;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+  color: var(--paper-dim);
+  padding: 8px 2px 2px;
+}
+
+/* ---------- Group/period axis labels ---------- */
+.axis-note{ font-size:12.5px; color:var(--paper-dim); padding: 4px 0 26px; }
+
+/* ---------- Sections ---------- */
+section.teach{ padding: 54px 0; border-top:1px solid var(--grid-line); }
+section.teach h2{ font-size: clamp(24px,3vw,32px); margin-bottom:14px; }
+section.teach .lede{ color:var(--paper-dim); max-width:70ch; margin-bottom:34px; font-size:15.5px; }
+
+.triad{ display:grid; grid-template-columns: repeat(3,1fr); gap:22px; }
+.triad .card{
+  border:1px solid var(--grid-line); border-radius:10px; padding:22px 20px;
+  background: rgba(255,255,255,0.03);
+}
+.triad .card .icon{ width:38px; height:38px; margin-bottom:14px; }
+.triad .card h3{ font-size:17px; margin-bottom:8px; }
+.triad .card p{ font-size:14px; color:var(--paper-dim); margin:0;}
+
+.trend-row{ display:grid; grid-template-columns: 200px 1fr; gap: 26px; align-items:center; margin-bottom:30px;}
+.trend-row .label{ font-size:14.5px; color:var(--paper); }
+.trend-row .label small{ display:block; color:var(--paper-dim); font-size:12.5px; margin-top:3px; }
+.trend-track{ position:relative; height:36px; }
+.trend-track svg{ width:100%; height:100%; display:block; overflow:visible; }
+
+/* ---------- Drawer ---------- */
+.scrim{ position:fixed; inset:0; background:rgba(6,12,20,0.6); backdrop-filter: blur(2px); opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:40; }
+.scrim.open{ opacity:1; pointer-events:auto; }
+.drawer{
+  position:fixed; top:0; right:0; height:100%; width:min(480px,100%);
+  background: var(--ink-bg-deep);
+  border-left:1px solid var(--grid-line);
+  transform: translateX(100%);
+  transition: transform .32s cubic-bezier(.2,.8,.2,1);
+  z-index:41; overflow-y:auto;
+}
+.drawer.open{ transform:translateX(0); }
+.drawer-head{ display:flex; align-items:flex-start; justify-content:space-between; padding: 26px 26px 0; }
+.drawer-close{ background:none; border:1px solid var(--grid-line); color:var(--paper); width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:16px; line-height:1;}
+.drawer-cat{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:4px 10px; border-radius:999px; display:inline-block; margin-bottom:10px;}
+.drawer-title{ padding: 6px 26px 0; }
+.drawer-title .sym{ font-family:'Fraunces',serif; font-size:76px; font-weight:600; line-height:1; }
+.drawer-title .nm{ font-size:22px; margin-top:4px; }
+.drawer-facts{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding: 22px 26px; }
+.fact{ border-top:1px solid var(--grid-line); padding-top:10px; }
+.fact .k{ font-size:11px; color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.03em;}
+.fact .v{ font-size:16px; margin-top:3px; }
+.atom-stage{ height:260px; margin:0 26px 8px; border-radius:10px; background:radial-gradient(circle at 50% 45%, rgba(255,255,255,0.06), transparent 70%); position:relative; }
+.atom-stage canvas{ border-radius:10px; display:block; }
+.shell-note{ padding: 0 26px 26px; font-size:13px; color:var(--paper-dim); }
+.predicted-note{ margin: 0 26px 22px; padding:12px 14px; border:1px dashed var(--brass-soft); border-radius:8px; font-size:12.5px; color:var(--brass-soft); background:rgba(216,169,79,0.06); }
+
+footer{ padding:40px 28px 60px; border-top:1px solid var(--grid-line); color:var(--paper-dim); font-size:12.5px; max-width:1320px; margin:0 auto; }
+footer a{ color:var(--brass-soft); }
+
+@media (max-width: 880px){
+  header.hero{ grid-template-columns:1fr; }
+  .hero-side{ border-left:none; border-top:1px solid var(--grid-line); padding-left:0; padding-top:20px; }
+  .explainer{ grid-template-columns:1fr; }
+  .triad{ grid-template-columns:1fr; }
+  .trend-row{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div>
+    <div class="eyebrow-row">
+      <svg class="atom-mark" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="3.4" fill="#d8a94f"/>
+        <ellipse cx="20" cy="20" rx="17" ry="7" stroke="#57a8e0" stroke-width="1.4"/>
+        <ellipse cx="20" cy="20" rx="17" ry="7" stroke="#8ed673" stroke-width="1.4" transform="rotate(60 20 20)"/>
+        <ellipse cx="20" cy="20" rx="17" ry="7" stroke="#f2a2cc" stroke-width="1.4" transform="rotate(120 20 20)"/>
+      </svg>
+      <span>A CHEMISTRY FIELD GUIDE</span>
+    </div>
+    <h1 class="title">Reading the <em>periodic table</em> like a chemist</h1>
+    <p class="hero-sub">Every element around you — the oxygen you breathe, the iron in your blood, the silicon in this screen — has a fixed address on one chart. This guide walks through what that address means, then lets you open any of the 118 known elements to see it built up, shell by shell.</p>
+  </div>
+  <div class="hero-side">
+    <p><strong>What the table actually sorts.</strong> Elements are ordered by atomic number — the number of protons in the nucleus — not by weight or age of discovery.</p>
+    <p><strong>How to use this page.</strong> Click any tile to open its record. Use the legend to isolate a family of elements. Scroll down for how rows, columns and trends work.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="explainer">
+    <div class="sample-cell" style="border-color:#57a8e0;background:linear-gradient(155deg, rgba(87,168,224,0.22), rgba(87,168,224,0.06));">
+      <div class="num">26</div>
+      <div class="sym">Fe</div>
+      <div class="nm">Iron</div>
+      <div class="ms">55.845</div>
+    </div>
+    <div class="callouts">
+      <div class="callout"><b>Atomic number</b><span>Protons in the nucleus. This is the element's identity — change it, and you have a different element entirely.</span></div>
+      <div class="callout"><b>Symbol</b><span>A one- or two-letter shorthand, usually from the element's English or Latin name (iron's symbol, Fe, comes from <em>ferrum</em>).</span></div>
+      <div class="callout"><b>Atomic weight</b><span>The average mass of the element's atoms as they occur in nature, weighted by how common each isotope is — which is why it's rarely a whole number.</span></div>
+      <div class="callout"><b>Tile color</b><span>Marks which family the element belongs to — metals, nonmetals, metalloids, and their subgroups. Explained in the legend below.</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Find an element by name or symbol…" autocomplete="off">
+    </div>
+    <div class="view-toggle" role="group" aria-label="Color the table by">
+      <button data-view="category" class="active">By family</button>
+      <button data-view="phase">By phase at room temp</button>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="table-scroll">
+    <div class="ptable" id="ptable"></div>
+  </div>
+  <p class="axis-note">Rows run left to right as <strong>periods</strong> (energy shells added); columns run top to bottom as <strong>groups</strong> (families with similar outer‑shell electrons). The two detached rows are the lanthanides and actinides, pulled out only so the table stays a manageable width — they belong between groups 2 and 3 of periods 6 and 7.</p>
+
+  <section class="teach">
+    <h2>Periods, groups and blocks</h2>
+    <p class="lede">The table's shape isn't decoration — every row and column boundary marks a real pattern in how electrons fill up around the nucleus.</p>
+    <div class="triad">
+      <div class="card">
+        <svg class="icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="18" width="32" height="5" rx="2.5" fill="#57a8e0"/><circle cx="8" cy="20.5" r="3" fill="#0c1a29"/><circle cx="16" cy="20.5" r="3" fill="#0c1a29"/><circle cx="24" cy="20.5" r="3" fill="#0c1a29"/><circle cx="32" cy="20.5" r="3" fill="#0c1a29"/></svg>
+        <h3>Periods (rows)</h3>
+        <p>Each of the 7 rows starts a new electron shell. Moving right along a period, atoms get one more proton and one more electron, and properties shift gradually from metallic to nonmetallic.</p>
+      </div>
+      <div class="card">
+        <svg class="icon" viewBox="0 0 40 40" fill="none"><rect x="18" y="4" width="5" height="32" rx="2.5" fill="#8ed673"/><circle cx="20.5" cy="8" r="3" fill="#0c1a29"/><circle cx="20.5" cy="16" r="3" fill="#0c1a29"/><circle cx="20.5" cy="24" r="3" fill="#0c1a29"/><circle cx="20.5" cy="32" r="3" fill="#0c1a29"/></svg>
+        <h3>Groups (columns)</h3>
+        <p>Elements in the same column share the same number of electrons in their outermost shell, so they tend to react in similar ways — group 1 metals all react vigorously with water, for instance.</p>
+      </div>
+      <div class="card">
+        <svg class="icon" viewBox="0 0 40 40" fill="none"><rect x="5" y="8" width="12" height="12" rx="2" fill="#ff7a63"/><rect x="23" y="8" width="12" height="12" rx="2" fill="#57a8e0"/><rect x="5" y="24" width="12" height="12" rx="2" fill="#f2a2cc"/><rect x="23" y="24" width="12" height="12" rx="2" fill="#8ed673"/></svg>
+        <h3>Blocks</h3>
+        <p>The s, p, d and f blocks describe which type of orbital an atom's last electron went into. This page's ten color families are a more detailed, teaching-friendly version of that same idea.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="teach">
+    <h2>Two trends worth remembering</h2>
+    <p class="lede">Properties don't jump around randomly across the table — most change smoothly in one of two directions. Two of the clearest examples:</p>
+
+    <div class="trend-row">
+      <div class="label">Atomic size<small>Shrinks across a period, grows down a group</small></div>
+      <div class="trend-track"><svg viewBox="0 0 700 36" preserveAspectRatio="none">
+        <defs><linearGradient id="gradSize" x1="0" x2="1"><stop offset="0" stop-color="#8ed673"/><stop offset="1" stop-color="#57a8e0"/></linearGradient></defs>
+        <line x1="10" y1="18" x2="690" y2="18" stroke="var(--grid-line)" stroke-width="2"/>
+        <circle cx="40" cy="18" r="15" fill="url(#gradSize)" opacity="0.85"/>
+        <circle cx="160" cy="18" r="12" fill="url(#gradSize)" opacity="0.85"/>
+        <circle cx="280" cy="18" r="9.5" fill="url(#gradSize)" opacity="0.85"/>
+        <circle cx="400" cy="18" r="7.5" fill="url(#gradSize)" opacity="0.85"/>
+        <circle cx="520" cy="18" r="6" fill="url(#gradSize)" opacity="0.85"/>
+        <circle cx="640" cy="18" r="5" fill="url(#gradSize)" opacity="0.85"/>
+      </svg></div>
+    </div>
+    <div class="trend-row">
+      <div class="label">Reactivity of metals<small>Grows down group 1, shrinks across a period</small></div>
+      <div class="trend-track"><svg viewBox="0 0 700 36" preserveAspectRatio="none">
+        <defs><linearGradient id="gradReact" x1="0" x2="1"><stop offset="0" stop-color="#ffbb56"/><stop offset="1" stop-color="#ef5f78"/></linearGradient></defs>
+        <line x1="10" y1="18" x2="690" y2="18" stroke="var(--grid-line)" stroke-width="2"/>
+        <rect x="30" y="14" width="8" height="8" fill="url(#gradReact)"/>
+        <rect x="150" y="10" width="8" height="16" fill="url(#gradReact)"/>
+        <rect x="270" y="6" width="8" height="24" fill="url(#gradReact)"/>
+        <rect x="390" y="2" width="8" height="32" fill="url(#gradReact)"/>
+        <text x="30" y="34" fill="var(--paper-dim)" font-size="10" font-family="IBM Plex Mono">Li</text>
+        <text x="150" y="34" fill="var(--paper-dim)" font-size="10" font-family="IBM Plex Mono">Na</text>
+        <text x="270" y="34" fill="var(--paper-dim)" font-size="10" font-family="IBM Plex Mono">K</text>
+        <text x="390" y="34" fill="var(--paper-dim)" font-size="10" font-family="IBM Plex Mono">Rb</text>
+      </svg></div>
+    </div>
+    <p style="font-size:13px;color:var(--paper-dim);max-width:65ch;">These two sketches illustrate direction, not measured values — open any element's record for its actual atomic number and mass.</p>
+  </section>
+
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-cat" id="d-cat">Category</span>
+    <button class="drawer-close" id="d-close" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-title">
+    <div class="sym" id="d-sym">Fe</div>
+    <div class="nm" id="d-name">Iron</div>
+  </div>
+  <div class="atom-stage" id="atom-stage"></div>
+  <p class="shell-note" id="d-shellnote"></p>
+  <div class="drawer-facts">
+    <div class="fact"><div class="k">Atomic number</div><div class="v" id="d-z"></div></div>
+    <div class="fact"><div class="k">Standard atomic weight</div><div class="v" id="d-mass"></div></div>
+    <div class="fact"><div class="k">Period · Group</div><div class="v" id="d-pos"></div></div>
+    <div class="fact"><div class="k">Phase at room temp.</div><div class="v" id="d-phase"></div></div>
+  </div>
+  <div class="predicted-note" id="d-predicted" style="display:none;">Only a handful of atoms of this element have ever been made. Its phase and some properties are theoretical predictions, not direct observations.</div>
+</aside>
+
+<footer>
+  <p><strong>About the data.</strong> Atomic numbers, symbols, standard atomic weights and periodic positions follow IUPAC conventions. Bracketed masses, e.g. [268], give the mass number of the longest-lived known isotope for elements with no stable one. Electron-shell diagrams use the simplified Bohr shell-filling model (shell capacities 2, 8, 18, 32…) taught at introductory level — real atoms beyond argon fill orbitals in a more intricate order. For elements 104 and above, and a few of the heaviest actinides, physical properties are theoretical predictions since only tiny quantities have ever been synthesized; these are marked "predicted" in each record.</p>
+</footer>
+
+<script>
+const ELEMENTS = [{"z": 1, "symbol": "H", "name": "Hydrogen", "mass": "1.008", "category": "reactive-nonmetal", "phase": "gas", "predicted": false, "row": 1, "col": 1, "shells": [1], "isF": false}, {"z": 2, "symbol": "He", "name": "Helium", "mass": "4.003", "category": "noble-gas", "phase": "gas", "predicted": false, "row": 1, "col": 18, "shells": [2], "isF": false}, {"z": 3, "symbol": "Li", "name": "Lithium", "mass": "6.94", "category": "alkali-metal", "phase": "solid", "predicted": false, "row": 2, "col": 1, "shells": [2, 1], "isF": false}, {"z": 4, "symbol": "Be", "name": "Beryllium", "mass": "9.012", "category": "alkaline-earth", "phase": "solid", "predicted": false, "row": 2, "col": 2, "shells": [2, 2], "isF": false}, {"z": 5, "symbol": "B", "name": "Boron", "mass": "10.81", "category": "metalloid", "phase": "solid", "predicted": false, "row": 2, "col": 13, "shells": [2, 3], "isF": false}, {"z": 6, "symbol": "C", "name": "Carbon", "mass": "12.011", "category": "reactive-nonmetal", "phase": "solid", "predicted": false, "row": 2, "col": 14, "shells": [2, 4], "isF": false}, {"z": 7, "symbol": "N", "name": "Nitrogen", "mass": "14.007", "category": "reactive-nonmetal", "phase": "gas", "predicted": false, "row": 2, "col": 15, "shells": [2, 5], "isF": false}, {"z": 8, "symbol": "O", "name": "Oxygen", "mass": "15.999", "category": "reactive-nonmetal", "phase": "gas", "predicted": false, "row": 2, "col": 16, "shells": [2, 6], "isF": false}, {"z": 9, "symbol": "F", "name": "Fluorine", "mass": "18.998", "category": "halogen", "phase": "gas", "predicted": false, "row": 2, "col": 17, "shells": [2, 7], "isF": false}, {"z": 10, "symbol": "Ne", "name": "Neon", "mass": "20.180", "category": "noble-gas", "phase": "gas", "predicted": false, "row": 2, "col": 18, "shells": [2, 8], "isF": false}, {"z": 11, "symbol": "Na", "name": "Sodium", "mass": "22.990", "category": "alkali-metal", "phase": "solid", "predicted": false, "row": 3, "col": 1, "shells": [2, 8, 1], "isF": false}, {"z": 12, "symbol": "Mg", "name": "Magnesium", "mass": "24.305", "category": "alkaline-earth", "phase": "solid", "predicted": false, "row": 3, "col": 2, "shells": [2, 8, 2], "isF": false}, {"z": 13, "symbol": "Al", "name": "Aluminium", "mass": "26.982", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 3, "col": 13, "shells": [2, 8, 3], "isF": false}, {"z": 14, "symbol": "Si", "name": "Silicon", "mass": "28.085", "category": "metalloid", "phase": "solid", "predicted": false, "row": 3, "col": 14, "shells": [2, 8, 4], "isF": false}, {"z": 15, "symbol": "P", "name": "Phosphorus", "mass": "30.974", "category": "reactive-nonmetal", "phase": "solid", "predicted": false, "row": 3, "col": 15, "shells": [2, 8, 5], "isF": false}, {"z": 16, "symbol": "S", "name": "Sulfur", "mass": "32.06", "category": "reactive-nonmetal", "phase": "solid", "predicted": false, "row": 3, "col": 16, "shells": [2, 8, 6], "isF": false}, {"z": 17, "symbol": "Cl", "name": "Chlorine", "mass": "35.45", "category": "halogen", "phase": "gas", "predicted": false, "row": 3, "col": 17, "shells": [2, 8, 7], "isF": false}, {"z": 18, "symbol": "Ar", "name": "Argon", "mass": "39.948", "category": "noble-gas", "phase": "gas", "predicted": false, "row": 3, "col": 18, "shells": [2, 8, 8], "isF": false}, {"z": 19, "symbol": "K", "name": "Potassium", "mass": "39.098", "category": "alkali-metal", "phase": "solid", "predicted": false, "row": 4, "col": 1, "shells": [2, 8, 9], "isF": false}, {"z": 20, "symbol": "Ca", "name": "Calcium", "mass": "40.078", "category": "alkaline-earth", "phase": "solid", "predicted": false, "row": 4, "col": 2, "shells": [2, 8, 10], "isF": false}, {"z": 21, "symbol": "Sc", "name": "Scandium", "mass": "44.956", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 3, "shells": [2, 8, 11], "isF": false}, {"z": 22, "symbol": "Ti", "name": "Titanium", "mass": "47.867", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 4, "shells": [2, 8, 12], "isF": false}, {"z": 23, "symbol": "V", "name": "Vanadium", "mass": "50.942", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 5, "shells": [2, 8, 13], "isF": false}, {"z": 24, "symbol": "Cr", "name": "Chromium", "mass": "51.996", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 6, "shells": [2, 8, 14], "isF": false}, {"z": 25, "symbol": "Mn", "name": "Manganese", "mass": "54.938", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 7, "shells": [2, 8, 15], "isF": false}, {"z": 26, "symbol": "Fe", "name": "Iron", "mass": "55.845", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 8, "shells": [2, 8, 16], "isF": false}, {"z": 27, "symbol": "Co", "name": "Cobalt", "mass": "58.933", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 9, "shells": [2, 8, 17], "isF": false}, {"z": 28, "symbol": "Ni", "name": "Nickel", "mass": "58.693", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 10, "shells": [2, 8, 18], "isF": false}, {"z": 29, "symbol": "Cu", "name": "Copper", "mass": "63.546", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 11, "shells": [2, 8, 18, 1], "isF": false}, {"z": 30, "symbol": "Zn", "name": "Zinc", "mass": "65.38", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 12, "shells": [2, 8, 18, 2], "isF": false}, {"z": 31, "symbol": "Ga", "name": "Gallium", "mass": "69.723", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 4, "col": 13, "shells": [2, 8, 18, 3], "isF": false}, {"z": 32, "symbol": "Ge", "name": "Germanium", "mass": "72.630", "category": "metalloid", "phase": "solid", "predicted": false, "row": 4, "col": 14, "shells": [2, 8, 18, 4], "isF": false}, {"z": 33, "symbol": "As", "name": "Arsenic", "mass": "74.922", "category": "metalloid", "phase": "solid", "predicted": false, "row": 4, "col": 15, "shells": [2, 8, 18, 5], "isF": false}, {"z": 34, "symbol": "Se", "name": "Selenium", "mass": "78.971", "category": "reactive-nonmetal", "phase": "solid", "predicted": false, "row": 4, "col": 16, "shells": [2, 8, 18, 6], "isF": false}, {"z": 35, "symbol": "Br", "name": "Bromine", "mass": "79.904", "category": "halogen", "phase": "liquid", "predicted": false, "row": 4, "col": 17, "shells": [2, 8, 18, 7], "isF": false}, {"z": 36, "symbol": "Kr", "name": "Krypton", "mass": "83.798", "category": "noble-gas", "phase": "gas", "predicted": false, "row": 4, "col": 18, "shells": [2, 8, 18, 8], "isF": false}, {"z": 37, "symbol": "Rb", "name": "Rubidium", "mass": "85.468", "category": "alkali-metal", "phase": "solid", "predicted": false, "row": 5, "col": 1, "shells": [2, 8, 18, 9], "isF": false}, {"z": 38, "symbol": "Sr", "name": "Strontium", "mass": "87.62", "category": "alkaline-earth", "phase": "solid", "predicted": false, "row": 5, "col": 2, "shells": [2, 8, 18, 10], "isF": false}, {"z": 39, "symbol": "Y", "name": "Yttrium", "mass": "88.906", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 3, "shells": [2, 8, 18, 11], "isF": false}, {"z": 40, "symbol": "Zr", "name": "Zirconium", "mass": "91.224", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 4, "shells": [2, 8, 18, 12], "isF": false}, {"z": 41, "symbol": "Nb", "name": "Niobium", "mass": "92.906", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 5, "shells": [2, 8, 18, 13], "isF": false}, {"z": 42, "symbol": "Mo", "name": "Molybdenum", "mass": "95.95", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 6, "shells": [2, 8, 18, 14], "isF": false}, {"z": 43, "symbol": "Tc", "name": "Technetium", "mass": "[98]", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 7, "shells": [2, 8, 18, 15], "isF": false}, {"z": 44, "symbol": "Ru", "name": "Ruthenium", "mass": "101.07", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 8, "shells": [2, 8, 18, 16], "isF": false}, {"z": 45, "symbol": "Rh", "name": "Rhodium", "mass": "102.91", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 9, "shells": [2, 8, 18, 17], "isF": false}, {"z": 46, "symbol": "Pd", "name": "Palladium", "mass": "106.42", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 10, "shells": [2, 8, 18, 18], "isF": false}, {"z": 47, "symbol": "Ag", "name": "Silver", "mass": "107.87", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 11, "shells": [2, 8, 18, 19], "isF": false}, {"z": 48, "symbol": "Cd", "name": "Cadmium", "mass": "112.41", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 12, "shells": [2, 8, 18, 20], "isF": false}, {"z": 49, "symbol": "In", "name": "Indium", "mass": "114.82", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 13, "shells": [2, 8, 18, 21], "isF": false}, {"z": 50, "symbol": "Sn", "name": "Tin", "mass": "118.71", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 5, "col": 14, "shells": [2, 8, 18, 22], "isF": false}, {"z": 51, "symbol": "Sb", "name": "Antimony", "mass": "121.76", "category": "metalloid", "phase": "solid", "predicted": false, "row": 5, "col": 15, "shells": [2, 8, 18, 23], "isF": false}, {"z": 52, "symbol": "Te", "name": "Tellurium", "mass": "127.60", "category": "metalloid", "phase": "solid", "predicted": false, "row": 5, "col": 16, "shells": [2, 8, 18, 24], "isF": false}, {"z": 53, "symbol": "I", "name": "Iodine", "mass": "126.90", "category": "halogen", "phase": "solid", "predicted": false, "row": 5, "col": 17, "shells": [2, 8, 18, 25], "isF": false}, {"z": 54, "symbol": "Xe", "name": "Xenon", "mass": "131.29", "category": "noble-gas", "phase": "gas", "predicted": false, "row": 5, "col": 18, "shells": [2, 8, 18, 26], "isF": false}, {"z": 55, "symbol": "Cs", "name": "Caesium", "mass": "132.91", "category": "alkali-metal", "phase": "solid", "predicted": false, "row": 6, "col": 1, "shells": [2, 8, 18, 27], "isF": false}, {"z": 56, "symbol": "Ba", "name": "Barium", "mass": "137.33", "category": "alkaline-earth", "phase": "solid", "predicted": false, "row": 6, "col": 2, "shells": [2, 8, 18, 28], "isF": false}, {"z": 57, "symbol": "La", "name": "Lanthanum", "mass": "138.91", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 3, "shells": [2, 8, 18, 29], "isF": true}, {"z": 58, "symbol": "Ce", "name": "Cerium", "mass": "140.12", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 4, "shells": [2, 8, 18, 30], "isF": true}, {"z": 59, "symbol": "Pr", "name": "Praseodymium", "mass": "140.91", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 5, "shells": [2, 8, 18, 31], "isF": true}, {"z": 60, "symbol": "Nd", "name": "Neodymium", "mass": "144.24", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 6, "shells": [2, 8, 18, 32], "isF": true}, {"z": 61, "symbol": "Pm", "name": "Promethium", "mass": "[145]", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 7, "shells": [2, 8, 18, 32, 1], "isF": true}, {"z": 62, "symbol": "Sm", "name": "Samarium", "mass": "150.36", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 8, "shells": [2, 8, 18, 32, 2], "isF": true}, {"z": 63, "symbol": "Eu", "name": "Europium", "mass": "151.96", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 9, "shells": [2, 8, 18, 32, 3], "isF": true}, {"z": 64, "symbol": "Gd", "name": "Gadolinium", "mass": "157.25", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 10, "shells": [2, 8, 18, 32, 4], "isF": true}, {"z": 65, "symbol": "Tb", "name": "Terbium", "mass": "158.93", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 11, "shells": [2, 8, 18, 32, 5], "isF": true}, {"z": 66, "symbol": "Dy", "name": "Dysprosium", "mass": "162.50", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 12, "shells": [2, 8, 18, 32, 6], "isF": true}, {"z": 67, "symbol": "Ho", "name": "Holmium", "mass": "164.93", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 13, "shells": [2, 8, 18, 32, 7], "isF": true}, {"z": 68, "symbol": "Er", "name": "Erbium", "mass": "167.26", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 14, "shells": [2, 8, 18, 32, 8], "isF": true}, {"z": 69, "symbol": "Tm", "name": "Thulium", "mass": "168.93", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 15, "shells": [2, 8, 18, 32, 9], "isF": true}, {"z": 70, "symbol": "Yb", "name": "Ytterbium", "mass": "173.05", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 16, "shells": [2, 8, 18, 32, 10], "isF": true}, {"z": 71, "symbol": "Lu", "name": "Lutetium", "mass": "174.97", "category": "lanthanide", "phase": "solid", "predicted": false, "row": 8, "col": 17, "shells": [2, 8, 18, 32, 11], "isF": true}, {"z": 72, "symbol": "Hf", "name": "Hafnium", "mass": "178.49", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 4, "shells": [2, 8, 18, 32, 12], "isF": false}, {"z": 73, "symbol": "Ta", "name": "Tantalum", "mass": "180.95", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 5, "shells": [2, 8, 18, 32, 13], "isF": false}, {"z": 74, "symbol": "W", "name": "Tungsten", "mass": "183.84", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 6, "shells": [2, 8, 18, 32, 14], "isF": false}, {"z": 75, "symbol": "Re", "name": "Rhenium", "mass": "186.21", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 7, "shells": [2, 8, 18, 32, 15], "isF": false}, {"z": 76, "symbol": "Os", "name": "Osmium", "mass": "190.23", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 8, "shells": [2, 8, 18, 32, 16], "isF": false}, {"z": 77, "symbol": "Ir", "name": "Iridium", "mass": "192.22", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 9, "shells": [2, 8, 18, 32, 17], "isF": false}, {"z": 78, "symbol": "Pt", "name": "Platinum", "mass": "195.08", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 10, "shells": [2, 8, 18, 32, 18], "isF": false}, {"z": 79, "symbol": "Au", "name": "Gold", "mass": "196.97", "category": "transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 11, "shells": [2, 8, 18, 32, 19], "isF": false}, {"z": 80, "symbol": "Hg", "name": "Mercury", "mass": "200.59", "category": "transition-metal", "phase": "liquid", "predicted": false, "row": 6, "col": 12, "shells": [2, 8, 18, 32, 20], "isF": false}, {"z": 81, "symbol": "Tl", "name": "Thallium", "mass": "204.38", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 13, "shells": [2, 8, 18, 32, 21], "isF": false}, {"z": 82, "symbol": "Pb", "name": "Lead", "mass": "207.2", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 14, "shells": [2, 8, 18, 32, 22], "isF": false}, {"z": 83, "symbol": "Bi", "name": "Bismuth", "mass": "208.98", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 15, "shells": [2, 8, 18, 32, 23], "isF": false}, {"z": 84, "symbol": "Po", "name": "Polonium", "mass": "[209]", "category": "post-transition-metal", "phase": "solid", "predicted": false, "row": 6, "col": 16, "shells": [2, 8, 18, 32, 24], "isF": false}, {"z": 85, "symbol": "At", "name": "Astatine", "mass": "[210]", "category": "halogen", "phase": "solid", "predicted": false, "row": 6, "col": 17, "shells": [2, 8, 18, 32, 25], "isF": false}, {"z": 86, "symbol": "Rn", "name": "Radon", "mass": "[222]", "category": "noble-gas", "phase": "gas", "predicted": false, "row": 6, "col": 18, "shells": [2, 8, 18, 32, 26], "isF": false}, {"z": 87, "symbol": "Fr", "name": "Francium", "mass": "[223]", "category": "alkali-metal", "phase": "solid", "predicted": true, "row": 7, "col": 1, "shells": [2, 8, 18, 32, 27], "isF": false}, {"z": 88, "symbol": "Ra", "name": "Radium", "mass": "[226]", "category": "alkaline-earth", "phase": "solid", "predicted": false, "row": 7, "col": 2, "shells": [2, 8, 18, 32, 28], "isF": false}, {"z": 89, "symbol": "Ac", "name": "Actinium", "mass": "[227]", "category": "actinide", "phase": "solid", "predicted": false, "row": 9, "col": 3, "shells": [2, 8, 18, 32, 29], "isF": true}, {"z": 90, "symbol": "Th", "name": "Thorium", "mass": "232.04", "category": "actinide", "phase": "solid", "predicted": false, "row": 9, "col": 4, "shells": [2, 8, 18, 32, 30], "isF": true}, {"z": 91, "symbol": "Pa", "name": "Protactinium", "mass": "231.04", "category": "actinide", "phase": "solid", "predicted": false, "row": 9, "col": 5, "shells": [2, 8, 18, 32, 31], "isF": true}, {"z": 92, "symbol": "U", "name": "Uranium", "mass": "238.03", "category": "actinide", "phase": "solid", "predicted": false, "row": 9, "col": 6, "shells": [2, 8, 18, 32, 32], "isF": true}, {"z": 93, "symbol": "Np", "name": "Neptunium", "mass": "[237]", "category": "actinide", "phase": "solid", "predicted": false, "row": 9, "col": 7, "shells": [2, 8, 18, 32, 32, 1], "isF": true}, {"z": 94, "symbol": "Pu", "name": "Plutonium", "mass": "[244]", "category": "actinide", "phase": "solid", "predicted": false, "row": 9, "col": 8, "shells": [2, 8, 18, 32, 32, 2], "isF": true}, {"z": 95, "symbol": "Am", "name": "Americium", "mass": "[243]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 9, "shells": [2, 8, 18, 32, 32, 3], "isF": true}, {"z": 96, "symbol": "Cm", "name": "Curium", "mass": "[247]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 10, "shells": [2, 8, 18, 32, 32, 4], "isF": true}, {"z": 97, "symbol": "Bk", "name": "Berkelium", "mass": "[247]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 11, "shells": [2, 8, 18, 32, 32, 5], "isF": true}, {"z": 98, "symbol": "Cf", "name": "Californium", "mass": "[251]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 12, "shells": [2, 8, 18, 32, 32, 6], "isF": true}, {"z": 99, "symbol": "Es", "name": "Einsteinium", "mass": "[252]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 13, "shells": [2, 8, 18, 32, 32, 7], "isF": true}, {"z": 100, "symbol": "Fm", "name": "Fermium", "mass": "[257]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 14, "shells": [2, 8, 18, 32, 32, 8], "isF": true}, {"z": 101, "symbol": "Md", "name": "Mendelevium", "mass": "[258]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 15, "shells": [2, 8, 18, 32, 32, 9], "isF": true}, {"z": 102, "symbol": "No", "name": "Nobelium", "mass": "[259]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 16, "shells": [2, 8, 18, 32, 32, 10], "isF": true}, {"z": 103, "symbol": "Lr", "name": "Lawrencium", "mass": "[266]", "category": "actinide", "phase": "solid", "predicted": true, "row": 9, "col": 17, "shells": [2, 8, 18, 32, 32, 11], "isF": true}, {"z": 104, "symbol": "Rf", "name": "Rutherfordium", "mass": "[267]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 4, "shells": [2, 8, 18, 32, 32, 12], "isF": false}, {"z": 105, "symbol": "Db", "name": "Dubnium", "mass": "[268]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 5, "shells": [2, 8, 18, 32, 32, 13], "isF": false}, {"z": 106, "symbol": "Sg", "name": "Seaborgium", "mass": "[269]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 6, "shells": [2, 8, 18, 32, 32, 14], "isF": false}, {"z": 107, "symbol": "Bh", "name": "Bohrium", "mass": "[270]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 7, "shells": [2, 8, 18, 32, 32, 15], "isF": false}, {"z": 108, "symbol": "Hs", "name": "Hassium", "mass": "[269]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 8, "shells": [2, 8, 18, 32, 32, 16], "isF": false}, {"z": 109, "symbol": "Mt", "name": "Meitnerium", "mass": "[278]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 9, "shells": [2, 8, 18, 32, 32, 17], "isF": false}, {"z": 110, "symbol": "Ds", "name": "Darmstadtium", "mass": "[281]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 10, "shells": [2, 8, 18, 32, 32, 18], "isF": false}, {"z": 111, "symbol": "Rg", "name": "Roentgenium", "mass": "[282]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 11, "shells": [2, 8, 18, 32, 32, 18, 1], "isF": false}, {"z": 112, "symbol": "Cn", "name": "Copernicium", "mass": "[285]", "category": "transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 12, "shells": [2, 8, 18, 32, 32, 18, 2], "isF": false}, {"z": 113, "symbol": "Nh", "name": "Nihonium", "mass": "[286]", "category": "post-transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 13, "shells": [2, 8, 18, 32, 32, 18, 3], "isF": false}, {"z": 114, "symbol": "Fl", "name": "Flerovium", "mass": "[289]", "category": "post-transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 14, "shells": [2, 8, 18, 32, 32, 18, 4], "isF": false}, {"z": 115, "symbol": "Mc", "name": "Moscovium", "mass": "[290]", "category": "post-transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 15, "shells": [2, 8, 18, 32, 32, 18, 5], "isF": false}, {"z": 116, "symbol": "Lv", "name": "Livermorium", "mass": "[293]", "category": "post-transition-metal", "phase": "solid", "predicted": true, "row": 7, "col": 16, "shells": [2, 8, 18, 32, 32, 18, 6], "isF": false}, {"z": 117, "symbol": "Ts", "name": "Tennessine", "mass": "[294]", "category": "halogen", "phase": "solid", "predicted": true, "row": 7, "col": 17, "shells": [2, 8, 18, 32, 32, 18, 7], "isF": false}, {"z": 118, "symbol": "Og", "name": "Oganesson", "mass": "[294]", "category": "noble-gas", "phase": "solid", "predicted": true, "row": 7, "col": 18, "shells": [2, 8, 18, 32, 32, 18, 8], "isF": false}];
+
+const CATEGORY_META = {
+  "alkali-metal":          { label:"Alkali metal",            color:"var(--c-alkali)" },
+  "alkaline-earth":        { label:"Alkaline earth metal",    color:"var(--c-alkaline)" },
+  "transition-metal":      { label:"Transition metal",        color:"var(--c-transition)" },
+  "post-transition-metal": { label:"Post-transition metal",   color:"var(--c-posttrans)" },
+  "metalloid":             { label:"Metalloid",               color:"var(--c-metalloid)" },
+  "reactive-nonmetal":     { label:"Reactive nonmetal",       color:"var(--c-nonmetal)" },
+  "halogen":               { label:"Halogen",                 color:"var(--c-halogen)" },
+  "noble-gas":             { label:"Noble gas",                color:"var(--c-noble)" },
+  "lanthanide":            { label:"Lanthanide",              color:"var(--c-lanthanide)" },
+  "actinide":              { label:"Actinide",                color:"var(--c-actinide)" },
+};
+const PHASE_META = {
+  "solid":  { label:"Solid",  color:"#9fb6c9" },
+  "liquid": { label:"Liquid", color:"#57a8e0" },
+  "gas":    { label:"Gas",    color:"#8ed673" },
+};
+
+const byPos = {};
+ELEMENTS.forEach(e => byPos[`${e.row}-${e.col}`] = e);
+
+const tableEl = document.getElementById('ptable');
+const legendEl = document.getElementById('legend');
+let currentView = 'category';
+let activeFilter = null;
+
+function resolveColor(varStr){
+  return getComputedStyle(document.documentElement).getPropertyValue(varStr.replace('var(','').replace(')','')).trim() || varStr;
+}
+
+function buildLegend(){
+  legendEl.innerHTML = '';
+  const meta = currentView === 'category' ? CATEGORY_META : PHASE_META;
+  Object.entries(meta).forEach(([key, m]) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.dataset.key = key;
+    chip.innerHTML = `<span class="dot" style="background:${m.color}"></span>${m.label}`;
+    chip.addEventListener('click', () => {
+      activeFilter = activeFilter === key ? null : key;
+      renderTable();
+      refreshLegendState();
+    });
+    legendEl.appendChild(chip);
+  });
+  refreshLegendState();
+}
+function refreshLegendState(){
+  [...legendEl.children].forEach(c => {
+    c.classList.toggle('dimmed', activeFilter && c.dataset.key !== activeFilter);
+  });
+}
+
+function cellMatches(e){
+  if(!activeFilter) return true;
+  return currentView === 'category' ? e.category === activeFilter : e.phase === activeFilter;
+}
+
+function renderTable(searchTerm){
+  tableEl.innerHTML = '';
+  const maxRow = 9, maxCol = 18;
+  for(let r = 1; r <= maxRow; r++){
+    if(r === 8){
+      const tag = document.createElement('div');
+      tag.className = 'row-tag';
+      tag.textContent = 'Lanthanides (57–71)';
+      tableEl.appendChild(tag);
+    }
+    if(r === 9){
+      const tag = document.createElement('div');
+      tag.className = 'row-tag';
+      tag.textContent = 'Actinides (89–103)';
+      tableEl.appendChild(tag);
+    }
+    for(let c = 1; c <= maxCol; c++){
+      const e = byPos[`${r}-${c}`];
+      if(!e){
+        const ph = document.createElement('div');
+        ph.className = 'cell placeholder';
+        if(r===6 && c===3) ph.textContent = '57–71';
+        else if(r===7 && c===3) ph.textContent = '89–103';
+        else ph.style.visibility = 'hidden';
+        tableEl.appendChild(ph);
+        continue;
+      }
+      const div = document.createElement('div');
+      div.className = 'cell';
+      const meta = currentView === 'category' ? CATEGORY_META[e.category] : PHASE_META[e.phase];
+      div.style.borderColor = meta.color;
+      div.style.background = `linear-gradient(155deg, color-mix(in srgb, ${resolveColorRaw(meta.color)} 22%, transparent), color-mix(in srgb, ${resolveColorRaw(meta.color)} 6%, transparent))`;
+      div.innerHTML = `<span class="z">${e.z}</span><span class="sym">${e.symbol}</span><span class="nm">${e.name}</span>`;
+      div.addEventListener('click', () => openDrawer(e));
+      if(!cellMatches(e)) div.classList.add('dimmed');
+      if(searchTerm){
+        const t = searchTerm.toLowerCase();
+        if(e.name.toLowerCase().includes(t) || e.symbol.toLowerCase() === t){
+          div.style.outline = '2px solid var(--brass)';
+        }
+      }
+      tableEl.appendChild(div);
+    }
+  }
+}
+function resolveColorRaw(v){
+  if(v.startsWith('var(')){
+    return getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim();
+  }
+  return v;
+}
+
+document.querySelectorAll('.view-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    activeFilter = null;
+    buildLegend();
+    renderTable();
+  });
+});
+
+document.getElementById('search').addEventListener('input', (ev) => {
+  renderTable(ev.target.value.trim());
+});
+
+buildLegend();
+renderTable();
+
+/* ---------------- Drawer + three.js Bohr model ---------------- */
+const drawer = document.getElementById('drawer');
+const scrim = document.getElementById('scrim');
+let renderer, scene, camera, animId, shellGroup;
+
+function openDrawer(e){
+  document.getElementById('d-sym').textContent = e.symbol;
+  document.getElementById('d-name').textContent = e.name;
+  const catMeta = CATEGORY_META[e.category];
+  const catTag = document.getElementById('d-cat');
+  catTag.textContent = catMeta.label;
+  catTag.style.color = resolveColorRaw(catMeta.color);
+  catTag.style.border = `1px solid ${resolveColorRaw(catMeta.color)}`;
+  catTag.style.background = `color-mix(in srgb, ${resolveColorRaw(catMeta.color)} 16%, transparent)`;
+  document.getElementById('d-z').textContent = e.z;
+  document.getElementById('d-mass').textContent = e.mass;
+  document.getElementById('d-pos').textContent = `Period ${e.isF ? (e.row===8?6:7) : e.row} · Group ${e.isF ? '3 (f-block)' : e.col}`;
+  document.getElementById('d-phase').textContent = PHASE_META[e.phase].label + (e.predicted ? ' (predicted)' : '');
+  document.getElementById('d-shellnote').textContent = `Simplified electron shells: ${e.shells.join(' , ')} (total ${e.z} electrons)`;
+  document.getElementById('d-predicted').style.display = e.predicted ? 'block' : 'none';
+
+  drawer.classList.add('open');
+  scrim.classList.add('open');
+  initAtom(e.shells, resolveColorRaw(catMeta.color));
+}
+function closeDrawer(){
+  drawer.classList.remove('open');
+  scrim.classList.remove('open');
+  if(animId) cancelAnimationFrame(animId);
+  const stage = document.getElementById('atom-stage');
+  stage.innerHTML = '';
+}
+document.getElementById('d-close').addEventListener('click', closeDrawer);
+scrim.addEventListener('click', closeDrawer);
+document.addEventListener('keydown', (ev) => { if(ev.key === 'Escape') closeDrawer(); });
+
+function initAtom(shells, colorHex){
+  const stage = document.getElementById('atom-stage');
+  stage.innerHTML = '';
+  if(animId) cancelAnimationFrame(animId);
+
+  const width = stage.clientWidth, height = stage.clientHeight;
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 100);
+  camera.position.set(0, 3.4, 9);
+  camera.lookAt(0,0,0);
+
+  renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  stage.appendChild(renderer.domElement);
+
+  const light = new THREE.PointLight(0xffffff, 1.4);
+  light.position.set(5,5,5);
+  scene.add(light);
+  scene.add(new THREE.AmbientLight(0x8899aa, 0.9));
+
+  const col = new THREE.Color(colorHex || '#57a8e0');
+
+  const nucleus = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 24, 24),
+    new THREE.MeshStandardMaterial({ color: 0xd8a94f, emissive: 0x3a2a08, roughness:0.4 })
+  );
+  scene.add(nucleus);
+
+  shellGroup = new THREE.Group();
+  scene.add(shellGroup);
+
+  const electrons = [];
+  shells.forEach((count, i) => {
+    const radius = 1.35 + i * 0.95;
+    const ringGeo = new THREE.RingGeometry(radius-0.006, radius+0.006, 128);
+    const ringMat = new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent:true, opacity:0.35 });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI/2 + i*0.18;
+    ring.rotation.y = i*0.35;
+    shellGroup.add(ring);
+
+    const tilt = new THREE.Group();
+    tilt.rotation.x = Math.PI/2 + i*0.18;
+    tilt.rotation.y = i*0.35;
+    shellGroup.add(tilt);
+
+    for(let k=0;k<count;k++){
+      const angle = (k / count) * Math.PI * 2;
+      const e = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 14, 14),
+        new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity:0.5 })
+      );
+      e.userData = { radius, angle, speed: 0.35 / (i+1) + 0.15, tiltGroup: tilt };
+      tilt.add(e);
+      electrons.push(e);
+    }
+  });
+
+  function animate(t){
+    animId = requestAnimationFrame(animate);
+    shellGroup.rotation.y += 0.0016;
+    electrons.forEach(e => {
+      e.userData.angle += e.userData.speed * 0.02;
+      e.position.x = Math.cos(e.userData.angle) * e.userData.radius;
+      e.position.z = Math.sin(e.userData.angle) * e.userData.radius;
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+window.addEventListener('resize', () => {
+  if(!renderer) return;
+  const stage = document.getElementById('atom-stage');
+  if(!stage.clientWidth) return;
+  camera.aspect = stage.clientWidth/stage.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+});
+</script>
+</body>
+</html>
